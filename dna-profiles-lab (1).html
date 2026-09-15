@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>DNA Profiles — BST Case Bench</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0A1512;
+    --bg-rail:#0E1B18;
+    --bg-panel:#122320;
+    --bg-panel-2:#162A25;
+    --line:#213531;
+    --line-soft:#1A2925;
+    --text:#E7F3EE;
+    --text-dim:#8FA9A0;
+    --text-faint:#5A7169;
+    --accent:#5EEAD4;
+    --accent-strong:#2DD4BF;
+    --accent-dim:rgba(94,234,212,0.12);
+    --flag:#F5A524;
+    --flag-dim:rgba(245,165,36,0.14);
+    --danger:#F0654A;
+    --danger-dim:rgba(240,101,74,0.14);
+    --mono:'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --display:'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(ellipse at top left, rgba(94,234,212,0.05), transparent 45%),
+      var(--bg);
+    color:var(--text);
+    font-family:var(--display);
+    display:flex;
+    flex-direction:column;
+    min-height:100vh;
+  }
+  ::selection{ background:var(--accent-dim); color:var(--text); }
+
+  /* ---------- header ---------- */
+  header{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    padding:16px 24px;
+    border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg, rgba(94,234,212,0.04), transparent);
+    flex-shrink:0;
+  }
+  .helix{ width:34px; height:34px; flex-shrink:0; }
+  header h1{
+    font-size:17px;
+    font-weight:600;
+    letter-spacing:0.01em;
+    margin:0;
+    color:var(--text);
+  }
+  header p{
+    margin:2px 0 0;
+    font-size:12.5px;
+    color:var(--text-dim);
+    font-family:var(--mono);
+  }
+  .header-status{
+    margin-left:auto;
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--text-dim);
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .pulse-dot{
+    width:7px;height:7px;border-radius:50%;
+    background:var(--text-faint);
+    box-shadow:0 0 0 0 rgba(94,234,212,0.5);
+  }
+  .pulse-dot.live{
+    background:var(--accent);
+    animation:pulse 2s infinite;
+  }
+  @keyframes pulse{
+    0%{ box-shadow:0 0 0 0 rgba(94,234,212,0.45); }
+    70%{ box-shadow:0 0 0 6px rgba(94,234,212,0); }
+    100%{ box-shadow:0 0 0 0 rgba(94,234,212,0); }
+  }
+
+  /* ---------- layout ---------- */
+  .layout{
+    display:flex;
+    flex:1;
+    min-height:0;
+  }
+  aside.rail{
+    width:360px;
+    flex-shrink:0;
+    background:var(--bg-rail);
+    border-right:1px solid var(--line);
+    overflow-y:auto;
+    padding:18px;
+    display:flex;
+    flex-direction:column;
+    gap:18px;
+  }
+  section.viewport{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    min-width:0;
+    position:relative;
+  }
+
+  /* ---------- rail sections ---------- */
+  .section-label{
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:0.04em;
+    color:var(--text-faint);
+    margin:0 0 8px;
+  }
+  .card{
+    background:var(--bg-panel);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:14px;
+  }
+  textarea{
+    width:100%;
+    height:96px;
+    resize:vertical;
+    background:var(--bg);
+    border:1px solid var(--line);
+    border-radius:6px;
+    color:var(--text);
+    font-family:var(--mono);
+    font-size:11.5px;
+    padding:8px;
+    line-height:1.5;
+  }
+  textarea:focus, input:focus, select:focus{
+    outline:none;
+    border-color:var(--accent-strong);
+  }
+  .btn-row{ display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+  button{
+    font-family:var(--display);
+    font-size:12.5px;
+    font-weight:600;
+    border-radius:6px;
+    border:1px solid var(--line);
+    background:var(--bg-panel-2);
+    color:var(--text);
+    padding:8px 12px;
+    cursor:pointer;
+    transition:border-color .15s ease, transform .1s ease;
+  }
+  button:hover:not(:disabled){ border-color:var(--accent-strong); }
+  button:active:not(:disabled){ transform:translateY(1px); }
+  button:disabled{ opacity:0.35; cursor:not-allowed; }
+  button.primary{
+    background:var(--accent-dim);
+    border-color:var(--accent-strong);
+    color:var(--accent);
+  }
+  button.danger{
+    background:var(--danger-dim);
+    border-color:var(--danger);
+    color:var(--danger);
+  }
+  button.block{ width:100%; justify-content:center; }
+  label.file-btn{
+    font-family:var(--display);
+    font-size:12.5px;
+    font-weight:600;
+    border-radius:6px;
+    border:1px dashed var(--line);
+    background:transparent;
+    color:var(--text-dim);
+    padding:8px 12px;
+    cursor:pointer;
+    text-align:center;
+    display:block;
+  }
+  label.file-btn:hover{ border-color:var(--accent-strong); color:var(--accent); }
+  input[type=file]{ display:none; }
+
+  .seq-row{
+    font-family:var(--mono);
+    font-size:11px;
+    color:var(--text-dim);
+    margin-top:8px;
+    word-break:break-all;
+    background:var(--bg);
+    border:1px solid var(--line-soft);
+    border-radius:5px;
+    padding:6px 8px;
+  }
+  .seq-row b{ color:var(--accent); font-weight:600; }
+
+  input[type=text]{
+    width:100%;
+    background:var(--bg);
+    border:1px solid var(--line);
+    border-radius:6px;
+    color:var(--text);
+    font-family:var(--mono);
+    font-size:12px;
+    padding:8px;
+  }
+  datalist{}
+
+  .stat-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+  }
+  .stat{
+    background:var(--bg);
+    border:1px solid var(--line-soft);
+    border-radius:6px;
+    padding:10px;
+  }
+  .stat .num{ font-family:var(--mono); font-size:22px; font-weight:600; }
+  .stat .lbl{ font-size:11px; color:var(--text-dim); margin-top:2px; }
+  .stat.flagged .num{ color:var(--flag); }
+  .stat.clear .num{ color:var(--accent); }
+
+  .result-box{
+    margin-top:10px;
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--text-dim);
+    background:var(--bg);
+    border:1px solid var(--line-soft);
+    border-radius:6px;
+    padding:8px;
+    min-height:18px;
+    white-space:pre-wrap;
+  }
+  .result-box.found{ border-color:var(--accent-strong); color:var(--accent); }
+  .result-box.notfound{ border-color:var(--danger); color:var(--danger); }
+
+  .unmarked-list{
+    margin-top:8px;
+    max-height:140px;
+    overflow-y:auto;
+    font-family:var(--mono);
+    font-size:12px;
+  }
+  .unmarked-list div{
+    padding:4px 6px;
+    border-bottom:1px solid var(--line-soft);
+    color:var(--text-dim);
+  }
+  .unmarked-list div:last-child{ border-bottom:none; }
+
+  /* ---------- canvas ---------- */
+  .canvas-wrap{
+    flex:1;
+    overflow:auto;
+    position:relative;
+    background:
+      linear-gradient(var(--line-soft) 1px, transparent 1px) 0 0/100% 40px,
+      linear-gradient(90deg, var(--line-soft) 1px, transparent 1px) 0 0/40px 100%,
+      var(--bg);
+    background-blend-mode:normal;
+  }
+  .canvas-wrap.empty{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .empty-state{
+    text-align:center;
+    color:var(--text-faint);
+    font-family:var(--mono);
+    font-size:13px;
+    max-width:340px;
+    line-height:1.6;
+  }
+  .empty-state .big{
+    font-family:var(--display);
+    font-size:16px;
+    color:var(--text-dim);
+    margin-bottom:6px;
+    font-weight:600;
+  }
+
+  .node-rect{
+    fill:var(--bg-panel);
+    stroke:var(--line);
+    stroke-width:1.3;
+    rx:6;
+    transition:stroke .15s ease, fill .15s ease;
+  }
+  .node-group{ cursor:pointer; }
+  .node-group:hover .node-rect{ stroke:var(--accent-strong); }
+  .node-group.marked .node-rect{ fill:var(--flag-dim); stroke:var(--flag); }
+  .node-group.selected .node-rect{ stroke:var(--accent); stroke-width:2.2; }
+  .node-group.path .node-rect{ stroke:var(--accent-strong); stroke-dasharray:3 2; }
+  .node-name{
+    font-family:var(--display);
+    font-size:12px;
+    font-weight:600;
+    fill:var(--text);
+  }
+  .node-sub{
+    font-family:var(--mono);
+    font-size:9.5px;
+    fill:var(--text-dim);
+  }
+  .node-flag-dot{ fill:var(--flag); }
+  .edge-line{
+    fill:none;
+    stroke:var(--line);
+    stroke-width:1.3;
+  }
+
+  /* ---------- detail panel ---------- */
+  .detail-panel{
+    position:absolute;
+    top:16px;
+    right:16px;
+    width:300px;
+    max-height:calc(100% - 32px);
+    overflow-y:auto;
+    background:var(--bg-panel);
+    border:1px solid var(--accent-strong);
+    border-radius:8px;
+    padding:14px;
+    box-shadow:0 8px 30px rgba(0,0,0,0.4);
+    display:none;
+  }
+  .detail-panel.open{ display:block; }
+  .detail-panel .dp-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:8px;
+  }
+  .detail-panel h3{
+    margin:0;
+    font-size:14px;
+    font-family:var(--display);
+    line-height:1.3;
+  }
+  .badge{
+    font-family:var(--mono);
+    font-size:10px;
+    padding:2px 7px;
+    border-radius:20px;
+    white-space:nowrap;
+    flex-shrink:0;
+  }
+  .badge.marked{ background:var(--flag-dim); color:var(--flag); border:1px solid var(--flag); }
+  .badge.clear{ background:var(--accent-dim); color:var(--accent); border:1px solid var(--accent-strong); }
+  .dp-close{
+    background:none; border:none; color:var(--text-faint); font-size:16px;
+    cursor:pointer; padding:0 0 0 8px; line-height:1;
+  }
+  .str-table{ width:100%; border-collapse:collapse; margin-top:10px; font-family:var(--mono); font-size:11px; }
+  .str-table th{
+    text-align:left; color:var(--text-faint); font-weight:500; font-size:10px;
+    border-bottom:1px solid var(--line); padding:4px 4px;
+  }
+  .str-table td{ padding:4px 4px; border-bottom:1px solid var(--line-soft); color:var(--text-dim); }
+  .str-table td.match{ color:var(--accent); }
+  .str-table td.nomatch{ color:var(--text-faint); }
+  .dp-remove{ margin-top:12px; width:100%; }
+
+  /* ---------- console ---------- */
+  .console{
+    flex-shrink:0;
+    height:150px;
+    border-top:1px solid var(--line);
+    background:#08110F;
+    font-family:var(--mono);
+    font-size:11.5px;
+    padding:10px 14px;
+    overflow-y:auto;
+    color:var(--text-dim);
+  }
+  .console .line{ margin-bottom:3px; white-space:pre-wrap; }
+  .console .line .tag{ color:var(--text-faint); }
+  .console .line.ok .tag{ color:var(--accent); }
+  .console .line.warn .tag{ color:var(--flag); }
+  .console .line.err .tag{ color:var(--danger); }
+
+  @media (max-width: 880px){
+    .layout{ flex-direction:column; }
+    aside.rail{ width:100%; border-right:none; border-bottom:1px solid var(--line); max-height:46vh; }
+    .detail-panel{ width:calc(100% - 32px); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <svg class="helix" viewBox="0 0 40 40" fill="none">
+    <path d="M8 4 C 8 12, 32 12, 32 20 C 32 28, 8 28, 8 36" stroke="#5EEAD4" stroke-width="2" stroke-linecap="round"/>
+    <path d="M32 4 C 32 12, 8 12, 8 20 C 8 28, 32 28, 32 36" stroke="#F5A524" stroke-width="2" stroke-linecap="round" opacity="0.85"/>
+    <line x1="9.5" y1="8" x2="30.5" y2="8" stroke="#213531" stroke-width="1.6"/>
+    <line x1="11" y1="20" x2="29" y2="20" stroke="#213531" stroke-width="1.6"/>
+    <line x1="9.5" y1="32" x2="30.5" y2="32" stroke="#213531" stroke-width="1.6"/>
+  </svg>
+  <div>
+    <h1>DNA Profiles — Case Bench</h1>
+    <p>binary search tree · STR matching · profile triage</p>
+  </div>
+  <div class="header-status">
+    <span class="pulse-dot" id="liveDot"></span>
+    <span id="statusText">no case loaded</span>
+  </div>
+</header>
+
+<div class="layout">
+  <aside class="rail">
+
+    <div>
+      <p class="section-label">01 · CASE FILE</p>
+      <div class="card">
+        <label class="file-btn">
+          Upload .in file
+          <input type="file" id="fileInput" accept=".in,.txt" />
+        </label>
+        <div class="btn-row">
+          <button id="loadSampleBtn">Load sample case</button>
+          <button id="toggleRawBtn" style="margin-left:auto;">Paste raw ▾</button>
+        </div>
+        <textarea id="rawInput" placeholder="…or paste an .in file: two unknown sequences, person count, then each profile's STRs" style="display:none; margin-top:10px;"></textarea>
+        <div class="btn-row" id="buildRow" style="display:none;">
+          <button id="buildBtn" class="primary block">Build tree from pasted text</button>
+        </div>
+        <div class="seq-row" id="seqDisplay">no sequences loaded yet</div>
+      </div>
+    </div>
+
+    <div>
+      <p class="section-label">02 · ANALYSIS</p>
+      <div class="card">
+        <button id="markBtn" class="primary block" disabled>Run STR matching → flag profiles of interest</button>
+        <div class="stat-grid" style="margin-top:12px;">
+          <div class="stat clear"><div class="num" id="statClear">–</div><div class="lbl">unmarked</div></div>
+          <div class="stat flagged"><div class="num" id="statFlagged">–</div><div class="lbl">flagged (POI)</div></div>
+        </div>
+        <button id="showUnmarkedBtn" class="block" style="margin-top:10px;" disabled>List unmarked (level-order)</button>
+        <div class="unmarked-list" id="unmarkedList" style="display:none;"></div>
+      </div>
+    </div>
+
+    <div>
+      <p class="section-label">03 · SEARCH</p>
+      <div class="card">
+        <input type="text" id="searchInput" placeholder="Last, First" list="nameList" disabled />
+        <datalist id="nameList"></datalist>
+        <div class="btn-row">
+          <button id="searchBtn" class="block" disabled>Search by name</button>
+        </div>
+        <div class="result-box" id="searchResult">results will appear here</div>
+      </div>
+    </div>
+
+    <div>
+      <p class="section-label">04 · DATABASE OPS</p>
+      <div class="card">
+        <input type="text" id="removeInput" placeholder="Last, First" list="nameList" disabled />
+        <div class="btn-row">
+          <button id="removeBtn" class="danger block" disabled>Remove person</button>
+        </div>
+        <div class="btn-row">
+          <button id="cleanupBtn" class="danger block" disabled>Clean up tree (delete all unmarked)</button>
+        </div>
+      </div>
+    </div>
+
+  </aside>
+
+  <section class="viewport">
+    <div class="canvas-wrap empty" id="canvasWrap">
+      <div class="empty-state">
+        <div class="big">No tree yet</div>
+        Load a case file to assemble the binary search tree.<br/>Profiles are keyed by full name (Last, First).
+      </div>
+    </div>
+
+    <div class="detail-panel" id="detailPanel">
+      <div class="dp-head">
+        <h3 id="dpName">—</h3>
+        <button class="dp-close" id="dpClose">✕</button>
+      </div>
+      <span class="badge" id="dpBadge">—</span>
+      <table class="str-table">
+        <thead><tr><th>STR</th><th>expect</th><th>seq1+seq2</th></tr></thead>
+        <tbody id="dpStrBody"></tbody>
+      </table>
+      <button class="danger dp-remove" id="dpRemoveBtn">Remove this profile</button>
+    </div>
+
+    <div class="console" id="console"></div>
+  </section>
+</div>
+
+<script>
+/* =========================================================
+   CORE BST LOGIC — direct port of the completed Java methods
+   (DNAProfiles.java: insertPerson, searchByName, markProfilesOfInterest,
+   getMatchingProfileCount, findUnmarkedPeople, removePerson, cleanupTree)
+   ========================================================= */
+
+function compareNames(a, b){
+  if (a < b) return -1;
+  if (a > b) return 1;
+  return 0;
+}
+
+function insertPerson(root, newProfile){
+  const newNode = { data: newProfile, left: null, right: null };
+  if (root === null) return newNode;
+  let current = root;
+  while (true){
+    const cmp = compareNames(newProfile.fullName, current.data.fullName);
+    if (cmp < 0){
+      if (current.left === null){ current.left = newNode; return root; }
+      current = current.left;
+    } else {
+      if (current.right === null){ current.right = newNode; return root; }
+      current = current.right;
+    }
+  }
+}
+
+function searchByName(node, fullName){
+  if (node === null) return null;
+  const cmp = compareNames(fullName, node.data.fullName);
+  if (cmp === 0) return node.data;
+  if (cmp < 0) return searchByName(node.left, fullName);
+  return searchByName(node.right, fullName);
+}
+
+function searchWithPath(node, fullName, path){
+  if (node === null) return null;
+  path.push(node.data.fullName);
+  const cmp = compareNames(fullName, node.data.fullName);
+  if (cmp === 0) return node.data;
+  if (cmp < 0) return searchWithPath(node.left, fullName, path);
+  return searchWithPath(node.right, fullName, path);
+}
+
+function numberOfOccurrences(sequence, str){
+  let repeats = 0;
+  if (str.length > sequence.length) return 0;
+  let idx = sequence.indexOf(str);
+  while (idx !== -1){
+    repeats++;
+    idx = sequence.indexOf(str, idx + str.length);
+  }
+  return repeats;
+}
+
+function markProfilesHelper(node, seq1, seq2){
+  if (node === null) return;
+  const profile = node.data;
+  const strs = profile.strs;
+  let matchCount = 0;
+  const s = strs.length;
+  for (let i=0;i<s;i++){
+    const c1 = numberOfOccurrences(seq1, strs[i].str);
+    const c2 = numberOfOccurrences(seq2, strs[i].str);
+    if (c1 + c2 === strs[i].occurrences) matchCount++;
+  }
+  const required = Math.floor((s+1)/2);
+  if (matchCount >= required) profile.isMarked = true;
+  markProfilesHelper(node.left, seq1, seq2);
+  markProfilesHelper(node.right, seq1, seq2);
+}
+
+function countHelper(node, isOfInterest){
+  if (node === null) return 0;
+  let count = (node.data.isMarked === isOfInterest) ? 1 : 0;
+  count += countHelper(node.left, isOfInterest);
+  count += countHelper(node.right, isOfInterest);
+  return count;
+}
+
+function findUnmarkedPeople(root){
+  const result = [];
+  if (root === null) return result;
+  const queue = [root];
+  while (queue.length){
+    const current = queue.shift();
+    if (!current.data.isMarked) result.push(current.data.fullName);
+    if (current.left) queue.push(current.left);
+    if (current.right) queue.push(current.right);
+  }
+  return result;
+}
+
+function findMin(node){
+  while (node.left !== null) node = node.left;
+  return node;
+}
+
+function removeHelper(node, fullName){
+  if (node === null) return null;
+  const cmp = compareNames(fullName, node.data.fullName);
+  if (cmp < 0){
+    node.left = removeHelper(node.left, fullName);
+  } else if (cmp > 0){
+    node.right = removeHelper(node.right, fullName);
+  } else {
+    if (node.left === null && node.right === null) return null;
+    if (node.left === null) return node.right;
+    if (node.right === null) return node.left;
+    const successor = findMin(node.right);
+    const successorData = successor.data;
+    const rightSubtree = removeHelper(node.right, successorData.fullName);
+    const replacement = { data: successorData, left: node.left, right: rightSubtree };
+    return replacement;
+  }
+  return node;
+}
+
+function removePerson(root, fullName){
+  return removeHelper(root, fullName);
+}
+
+function cleanupTree(root){
+  const unmarked = findUnmarkedPeople(root);
+  let r = root;
+  for (const name of unmarked) r = removePerson(r, name);
+  return r;
+}
+
+function parseInputFile(text){
+  const lines = text.split(/\r?\n/);
+  let li = 0;
+  const seq1 = (lines[li++]||'').trim();
+  const seq2 = (lines[li++]||'').trim();
+  const numPeople = parseInt((lines[li++]||'0').trim(), 10) || 0;
+  const rest = lines.slice(li).join(' ');
+  const tokens = rest.split(/\s+/).filter(Boolean);
+  let ti = 0;
+  const profiles = [];
+  for (let i=0;i<numPeople;i++){
+    const fname = tokens[ti++];
+    const lname = tokens[ti++];
+    if (fname === undefined || lname === undefined) break;
+    const fullName = `${lname}, ${fname}`;
+    const count = parseInt(tokens[ti++], 10) || 0;
+    const strs = [];
+    for (let j=0;j<count;j++){
+      const strName = tokens[ti++];
+      const occ = parseInt(tokens[ti++], 10) || 0;
+      strs.push({ str: strName, occurrences: occ });
+    }
+    profiles.push({ fullName, strs, isMarked: false });
+  }
+  return { seq1, seq2, profiles };
+}
+
+/* =========================================================
+   APP STATE + UI
+   ========================================================= */
+
+const SAMPLE_INPUT = `CCCCGTGCGTGCAGAGCCAACCAACCAAAGAGAGAG
+CCCCGGGGGTGCGTGCGGGGAGAGAGAGAGAGGGGG
+15
+John Doe 4
+AGAG 2
+CTGAC 3
+ACTGA 3
+TCACT 4
+Jane Smith 1
+GATCG 8
+Mike Jones 3
+GTGC 4
+ATA 4
+CAT 4
+Charlie Williams 3
+AGATC 3
+AATG 2
+TATC 5
+Emily Brown 2
+AGAG 6
+CTCT 3
+Sam Brown 3
+GGCC 4
+TTAA 4
+CACG 3
+Olivia Taylor 1
+AGCT 5
+Daniel Miller 2
+AGAG 6
+CGCG 3
+Emma Anderson 3
+TGTG 4
+AGGC 3
+CCGG 2
+Noah Martinez 1
+AGAG 6
+Sophia Garcia 1
+TATT 5
+Marvin Lee 3
+AGAG 5
+GATA 2
+CCAA 3
+Aiden Hall 1
+ATAG 7
+Liam Lopez 3
+GGTA 4
+TGGA 2
+CCCAG 3
+Mia Young 2
+GTGC 4
+CCAA 3`;
+
+let treeRoot = null;
+let seq1 = '', seq2 = '';
+let selectedName = null;
+let pathNames = [];
+
+const $ = (id) => document.getElementById(id);
+const consoleEl = $('console');
+const liveDot = $('liveDot');
+const statusText = $('statusText');
+
+function log(msg, kind){
+  const div = document.createElement('div');
+  div.className = 'line' + (kind ? ' ' + kind : '');
+  const t = new Date().toLocaleTimeString([], {hour12:false});
+  div.innerHTML = `<span class="tag">[${t}]</span> ${msg}`;
+  consoleEl.appendChild(div);
+  consoleEl.scrollTop = consoleEl.scrollHeight;
+}
+
+function flatten(root){
+  const out = [];
+  (function walk(n){
+    if (!n) return;
+    walk(n.left);
+    out.push(n.data);
+    walk(n.right);
+  })(root);
+  return out;
+}
+
+function setControlsEnabled(enabled){
+  ['markBtn','showUnmarkedBtn','searchInput','searchBtn','removeInput','removeBtn','cleanupBtn']
+    .forEach(id => $(id).disabled = !enabled);
+}
+
+function refreshNameList(){
+  const dl = $('nameList');
+  dl.innerHTML = '';
+  flatten(treeRoot).forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.fullName;
+    dl.appendChild(opt);
+  });
+}
+
+function refreshStats(){
+  if (!treeRoot){
+    $('statClear').textContent = '–';
+    $('statFlagged').textContent = '–';
+    return;
+  }
+  $('statClear').textContent = countHelper(treeRoot, false);
+  $('statFlagged').textContent = countHelper(treeRoot, true);
+}
+
+function closeDetail(){
+  selectedName = null;
+  $('detailPanel').classList.remove('open');
+}
+
+function openDetail(profile){
+  selectedName = profile.fullName;
+  $('dpName').textContent = profile.fullName;
+  const badge = $('dpBadge');
+  if (profile.isMarked){
+    badge.textContent = 'PERSON OF INTEREST';
+    badge.className = 'badge marked';
+  } else {
+    badge.textContent = 'CLEAR';
+    badge.className = 'badge clear';
+  }
+  const body = $('dpStrBody');
+  body.innerHTML = '';
+  profile.strs.forEach(s => {
+    const c1 = numberOfOccurrences(seq1 || '', s.str);
+    const c2 = numberOfOccurrences(seq2 || '', s.str);
+    const total = c1 + c2;
+    const isMatch = total === s.occurrences;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${s.str}</td><td>${s.occurrences}</td><td class="${isMatch ? 'match' : 'nomatch'}">${total}${isMatch ? ' ✓' : ''}</td>`;
+    body.appendChild(tr);
+  });
+  $('detailPanel').classList.add('open');
+  render();
+}
+
+/* ---------- tree rendering ---------- */
+
+const NODE_W = 168, NODE_H = 52, LEVEL_H = 96, PAD = 50;
+
+function computeLayout(root){
+  const positions = new Map();
+  let counter = 0, maxDepth = 0;
+  (function inorder(node, depth){
+    if (!node) return;
+    inorder(node.left, depth+1);
+    positions.set(node.data.fullName, { xi: counter, depth });
+    counter++;
+    if (depth > maxDepth) maxDepth = depth;
+    inorder(node.right, depth+1);
+  })(root, 0);
+  return { positions, count: counter, maxDepth };
+}
+
+function px(xi){ return PAD + xi*NODE_W + NODE_W/2; }
+function py(depth){ return PAD + depth*LEVEL_H + NODE_H/2; }
+
+const svgNS = 'http://www.w3.org/2000/svg';
+function el(tag, attrs){
+  const e = document.createElementNS(svgNS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  return e;
+}
+
+function render(){
+  const wrap = $('canvasWrap');
+  wrap.innerHTML = '';
+
+  if (!treeRoot){
+    wrap.classList.add('empty');
+    const div = document.createElement('div');
+    div.className = 'empty-state';
+    div.innerHTML = `<div class="big">No tree yet</div>Load a case file to assemble the binary search tree.<br/>Profiles are keyed by full name (Last, First).`;
+    wrap.appendChild(div);
+    return;
+  }
+  wrap.classList.remove('empty');
+
+  const { positions, count, maxDepth } = computeLayout(treeRoot);
+  const width = Math.max(PAD*2 + count*NODE_W, 400);
+  const height = PAD*2 + (maxDepth+1)*LEVEL_H;
+
+  const svg = el('svg', { width, height, viewBox: `0 0 ${width} ${height}` });
+
+  const edgeGroup = el('g', {});
+  const nodeGroup = el('g', {});
+
+  (function walk(node){
+    if (!node) return;
+    const p = positions.get(node.data.fullName);
+    const x1 = px(p.xi), y1 = py(p.depth) + NODE_H/2;
+    [node.left, node.right].forEach(child => {
+      if (!child) return;
+      const c = positions.get(child.data.fullName);
+      const x2 = px(c.xi), y2 = py(c.depth) - NODE_H/2;
+      const midY = (y1+y2)/2;
+      const path = el('path', {
+        class:'edge-line',
+        d:`M ${x1} ${y1} V ${midY} H ${x2} V ${y2}`
+      });
+      edgeGroup.appendChild(path);
+    });
+    walk(node.left); walk(node.right);
+  })(treeRoot);
+
+  (function walk(node){
+    if (!node) return;
+    const profile = node.data;
+    const p = positions.get(profile.fullName);
+    const cx = px(p.xi), cy = py(p.depth);
+
+    let cls = 'node-group';
+    if (profile.isMarked) cls += ' marked';
+    if (profile.fullName === selectedName) cls += ' selected';
+    if (pathNames.includes(profile.fullName)) cls += ' path';
+
+    const g = el('g', { class: cls, transform:`translate(${cx - NODE_W/2}, ${cy - NODE_H/2})` });
+    g.appendChild(el('rect', { class:'node-rect', width:NODE_W, height:NODE_H, rx:6 }));
+
+    const name = el('text', { class:'node-name', x:10, y:21 });
+    name.textContent = profile.fullName.length > 20 ? profile.fullName.slice(0,19) + '…' : profile.fullName;
+    g.appendChild(name);
+
+    const sub = el('text', { class:'node-sub', x:10, y:37 });
+    sub.textContent = `${profile.strs.length} STR${profile.strs.length===1?'':'s'}`;
+    g.appendChild(sub);
+
+    if (profile.isMarked){
+      g.appendChild(el('circle', { class:'node-flag-dot', cx:NODE_W-14, cy:14, r:4 }));
+    }
+
+    g.addEventListener('click', () => openDetail(profile));
+    nodeGroup.appendChild(g);
+
+    walk(node.left); walk(node.right);
+  })(treeRoot);
+
+  svg.appendChild(edgeGroup);
+  svg.appendChild(nodeGroup);
+  wrap.appendChild(svg);
+}
+
+/* ---------- actions ---------- */
+
+function loadTreeFromText(text, sourceLabel){
+  try {
+    const { seq1: s1, seq2: s2, profiles } = parseInputFile(text);
+    if (!profiles.length) throw new Error('no profiles parsed');
+    let root = null;
+    for (const p of profiles) root = insertPerson(root, p);
+    treeRoot = root;
+    seq1 = s1; seq2 = s2;
+    selectedName = null; pathNames = [];
+    closeDetail();
+    $('seqDisplay').innerHTML = `<b>seq 1</b> ${s1}<br/><b>seq 2</b> ${s2}`;
+    setControlsEnabled(true);
+    refreshStats();
+    refreshNameList();
+    $('unmarkedList').style.display = 'none';
+    $('searchResult').textContent = 'results will appear here';
+    $('searchResult').className = 'result-box';
+    liveDot.classList.add('live');
+    statusText.textContent = `${profiles.length} profiles loaded`;
+    log(`Built tree from ${sourceLabel} — <span style="color:var(--accent)">${profiles.length} profiles</span> inserted via insertPerson().`, 'ok');
+    render();
+  } catch (err){
+    log(`Failed to parse input (${sourceLabel}): ${err.message}`, 'err');
+    alert('Could not parse that file. Make sure it matches the expected .in format.');
+  }
+}
+
+$('fileInput').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => loadTreeFromText(reader.result, `"${file.name}"`);
+  reader.readAsText(file);
+});
+
+$('loadSampleBtn').addEventListener('click', () => {
+  loadTreeFromText(SAMPLE_INPUT, 'sample case file');
+});
+
+$('toggleRawBtn').addEventListener('click', () => {
+  const ta = $('rawInput');
+  const row = $('buildRow');
+  const show = ta.style.display === 'none';
+  ta.style.display = show ? 'block' : 'none';
+  row.style.display = show ? 'flex' : 'none';
+});
+
+$('buildBtn').addEventListener('click', () => {
+  const text = $('rawInput').value.trim();
+  if (!text){ alert('Paste an .in file first.'); return; }
+  loadTreeFromText(text, 'pasted text');
+});
+
+$('markBtn').addEventListener('click', () => {
+  if (!treeRoot) return;
+  markProfilesHelper(treeRoot, seq1 || '', seq2 || '');
+  refreshStats();
+  const flagged = countHelper(treeRoot, true);
+  log(`Ran markProfilesOfInterest() — <span style="color:var(--flag)">${flagged} profile${flagged===1?'':'s'} flagged</span> as persons of interest.`, 'warn');
+  render();
+});
+
+$('showUnmarkedBtn').addEventListener('click', () => {
+  if (!treeRoot) return;
+  const list = findUnmarkedPeople(treeRoot);
+  const box = $('unmarkedList');
+  box.innerHTML = list.length
+    ? list.map(n => `<div>${n}</div>`).join('')
+    : `<div>none — everyone is flagged</div>`;
+  box.style.display = 'block';
+  log(`findUnmarkedPeople() → ${list.length} unmarked, level-order.`);
+});
+
+$('searchBtn').addEventListener('click', () => {
+  const name = $('searchInput').value.trim();
+  if (!name || !treeRoot) return;
+  const path = [];
+  const found = searchWithPath(treeRoot, name, path);
+  pathNames = path;
+  const box = $('searchResult');
+  if (found){
+    box.textContent = `Found — ${found.strs.length} STR(s), ${found.isMarked ? 'flagged as POI' : 'unmarked'}. Path: ${path.length} comparison${path.length===1?'':'s'}.`;
+    box.className = 'result-box found';
+    log(`searchByName("${name}") → found in ${path.length} comparisons.`, 'ok');
+    openDetail(found);
+  } else {
+    box.textContent = `Not found. Search returned null after ${path.length} comparisons.`;
+    box.className = 'result-box notfound';
+    log(`searchByName("${name}") → null.`, 'err');
+    render();
+  }
+});
+
+$('removeBtn').addEventListener('click', () => {
+  const name = $('removeInput').value.trim();
+  if (!name || !treeRoot) return;
+  const existed = searchByName(treeRoot, name);
+  treeRoot = removePerson(treeRoot, name);
+  if (existed){
+    log(`removePerson("${name}") → removed from tree.`, 'warn');
+    if (selectedName === name) closeDetail();
+  } else {
+    log(`removePerson("${name}") → no matching profile, tree unchanged.`);
+  }
+  refreshStats();
+  refreshNameList();
+  render();
+});
+
+$('cleanupBtn').addEventListener('click', () => {
+  if (!treeRoot) return;
+  const unmarked = findUnmarkedPeople(treeRoot);
+  if (!unmarked.length){
+    log('cleanupTree() → nothing unmarked to remove.');
+    return;
+  }
+  if (!confirm(`This will permanently remove ${unmarked.length} unmarked profile(s). Continue?`)) return;
+  treeRoot = cleanupTree(treeRoot);
+  closeDetail();
+  refreshStats();
+  refreshNameList();
+  $('unmarkedList').style.display = 'none';
+  log(`cleanupTree() → removed ${unmarked.length} unmarked profile(s). Only flagged profiles remain.`, 'danger');
+  render();
+});
+
+$('dpClose').addEventListener('click', closeDetail);
+$('dpRemoveBtn').addEventListener('click', () => {
+  if (!selectedName) return;
+  $('removeInput').value = selectedName;
+  $('removeBtn').click();
+});
+
+log('Case bench ready. Load a case file to begin.');
+render();
+</script>
+</body>
+</html>
